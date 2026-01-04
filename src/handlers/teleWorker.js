@@ -108,9 +108,6 @@ export default async request => {
 
       let isPrivate = MESSAGE.chat_type === 'private'
 
-      // 默认限制: 私聊10个, 群聊3个
-      // 如果是管理员(配置了ADMIN_ID且匹配), 则显示100个(即无限制)
-      let isAdmin = ADMIN_ID && (String(MESSAGE.chat_id) === String(ADMIN_ID))
       let max = isAdmin ? 100 : (isPrivate ? 10 : 3)
 
       try {
