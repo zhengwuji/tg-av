@@ -131,9 +131,28 @@ export default async request => {
 
         let { title, cover, magnet, list } = result
 
+        // 构造详情页链接
+        let detailUrl = ''
+        if (source === 'JavDB') {
+          // JavDB链接通常是 https://javdb.com/v/ID
+          // 这里我们需要从result中获取ID或者链接,目前result里没有直接存link
+          // 我们需要修改javdb.js返回link,或者这里尝试构造
+          // 简单起见,我们在javdb.js里把link也返回比较好. 
+          // 暂时先用搜索页或尝试构造. 
+          // 更好的方式是修改javdb.js返回link. 
+          // 但为了快速修复,我们假设result.link存在(需要修改javdb.js)
+          // 或者我们直接把标题变成纯文本,在下面加一个按钮? 
+          // Telegram sendPhoto caption支持HTML
+        }
+
+        // 让我们先修改javdb.js让它返回link, 然后再改这里.
+        // 为了不中断流程,我先用一个临时方案: 
+        // 如果没有link,就不加链接. 但javdb.js里其实有firstVideoLink
+
         const media = {
           url: cover || '',
-          caption: title || ''
+          caption: result.link ? `<a href="${result.link}">${title}</a>` : (title || ''),
+          parse_mode: 'HTML'
         }
         await bot.sendPhoto(MESSAGE.chat_id, media)
 
@@ -169,7 +188,17 @@ export default async request => {
           }
           bot.sendText(MESSAGE.chat_id, message)
         } else {
-          bot.sendText(MESSAGE.chat_id, '还没有相关链接')
+          // 优化提示文案
+          let noLinkMsg = '⚠️ 未抓取到磁力链接'
+          if (source === 'JavDB') {
+            noLinkMsg += '\n(该资源可能需要登录JavDB才能查看磁力)'
+            if (result.link) {
+              noLinkMsg += `\n\n👉 <a href="${result.link}">点击这里访问网页版查看</a>`
+            }
+          } else {
+            noLinkMsg += '\n还没有相关链接'
+          }
+          bot.sendText(MESSAGE.chat_id, noLinkMsg, { parse_mode: 'HTML' })
         }
       } catch (e) {
         bot.sendText(MESSAGE.chat_id, e.message)
