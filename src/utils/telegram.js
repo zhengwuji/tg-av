@@ -7,7 +7,7 @@ class Telegram {
     this.telegramUrl = 'https://api.telegram.org/bot' + this.token
   }
 
-  async sendMessage(method, payload) {
+  async callApi(method, payload) {
     const url = `${this.telegramUrl}/${method}`
     const opts = {
       method: 'POST',
@@ -23,29 +23,35 @@ class Telegram {
     }
   }
 
-  sendText(chat_id, text) {
+  async sendMessage(chat_id, text, options = {}) {
     let payload = {
       "chat_id": chat_id,
       "parse_mode": "HTML",
       "disable_web_page_preview": true,
-      "text": text
+      "text": text,
+      ...options
     };
-    return this.sendMessage('sendMessage', payload)
+    return this.callApi('sendMessage', payload)
   }
 
-  sendPhoto(chat_id, photo) {
+  async sendText(chat_id, text, options = {}) {
+    return this.sendMessage(chat_id, text, options)
+  }
+
+  async sendPhoto(chat_id, photo, options = {}) {
     let payload = {
       "chat_id": chat_id,
       "parse_mode": "HTML",
       "disable_web_page_preview": true,
-      "photo": photo.url
+      "photo": photo.url,
+      ...options
     };
 
     if (photo.caption) {
       payload.caption = photo.caption
     }
 
-    return this.sendMessage('sendPhoto', payload)
+    return this.callApi('sendPhoto', payload)
   }
 
 }
