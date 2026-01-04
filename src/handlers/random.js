@@ -191,23 +191,35 @@ async function handleRandomCode(bot, chatId, preferBigTits = false) {
                 continue
             }
 
+            // 检查是否有磁力
+            const hasMagnet = result.magnet && result.magnet.length > 0
+
             // 如果是优先巨乳模式
             if (preferBigTits) {
                 if (BIG_TITS_KEYWORDS.some(k => title.includes(k))) {
                     // 找到了巨乳!
+                    // 如果有磁力, 直接返回 (完美匹配)
+                    if (hasMagnet) {
+                        bestResult = { ...result, code }
+                        break
+                    }
+                    // 如果没磁力, 暂存为最佳结果(如果之前没有更好的)
+                    if (!bestResult) {
+                        bestResult = { ...result, code }
+                    }
+                }
+            } else {
+                // 普通模式
+                if (hasMagnet) {
+                    // 有磁力, 直接返回
                     bestResult = { ...result, code }
                     break
                 }
+                // 没磁力, 暂存
+                if (!bestResult) {
+                    bestResult = { ...result, code }
+                }
             }
-
-            // 暂存一个有效结果 (作为保底)
-            if (!bestResult) {
-                bestResult = { ...result, code }
-            }
-
-            // 如果不是优先模式, 找到一个有效的就返回
-            if (!preferBigTits) break
-
         } catch (e) {
             // ignore error and retry
         }
