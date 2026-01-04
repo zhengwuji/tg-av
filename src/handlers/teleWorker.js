@@ -7,6 +7,7 @@ import { reqXHamster } from '../utils/xhamster.js'
 import { reqSukebei } from '../utils/sukebei.js'
 import randomJav, { handleCallback } from './random.js'
 import { searchStar } from './star.js'
+import { handleImageSearch } from './imageSearch.js'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -21,8 +22,8 @@ export default async request => {
       return new Response('ok', { status: 200 })
     }
 
-    // 检查是否有有效的消息文本
-    if (!body.message || !body.message.text) {
+    // 检查是否有有效的消息文本或图片
+    if (!body.message || (!body.message.text && !body.message.photo)) {
       return new Response('ok', { status: 200 })
     }
 
@@ -32,7 +33,8 @@ export default async request => {
       message_id: body.message.message_id,
       first_name: body.message.chat.first_name,
       last_name: body.message.chat.last_name,
-      text: body.message.text.toLowerCase()
+      text: (body.message.text || '').toLowerCase(),
+      photo: body.message.photo
     }
 
     // Check admin status
@@ -80,6 +82,13 @@ export default async request => {
       bot.sendText(MESSAGE.chat_id, help_text)
       return RETURN_OK
     }
+
+    // Handle Photo Messages (Reverse Image Search)
+    if (MESSAGE.photo) {
+      await handleImageSearch(bot, MESSAGE)
+      return RETURN_OK
+    }
+
     if (MESSAGE.text.startsWith('/start')) {
       bot.sendText(MESSAGE.chat_id, help_text)
       return RETURN_OK

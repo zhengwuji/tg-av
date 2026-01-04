@@ -17,7 +17,8 @@
     "node-telegram-bot-api": "^0.66.0",
     "puppeteer": "^21.6.1",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "sagiri": "^4.3.0"
   },
   "type": "module"
 }

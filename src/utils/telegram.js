@@ -61,6 +61,25 @@ class Telegram {
     })
   }
 
+  async getFile(file_id) {
+    const url = `${this.telegramUrl}/getFile?file_id=${file_id}`
+    try {
+      const response = await fetch(url)
+      return await response.json()
+    } catch (e) {
+      console.error('Telegram getFile failed:', e)
+      return null
+    }
+  }
+
+  async getFileLink(file_id) {
+    const file = await this.getFile(file_id)
+    if (file && file.ok && file.result) {
+      return `https://api.telegram.org/file/bot${this.token}/${file.result.file_path}`
+    }
+    return null
+  }
+
 }
 
 export default Telegram
