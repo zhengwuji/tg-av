@@ -143,6 +143,12 @@ async function handleTagSearch(bot, chatId, tag) {
             return
         }
 
+        // Check if login is required
+        if (result.loginRequired) {
+            await bot.sendText(chatId, `⚠️ 搜索【${tag}】需要登录 JavDB 才能查看。\n请联系管理员在 .env 中配置 JAVDB_EMAIL 和 JAVDB_PASSWORD。`)
+            return
+        }
+
         // 如果最终还是没有磁链, 提示用户
         if (!result.magnet || result.magnet.length === 0) {
             await bot.sendText(chatId, `关于【${tag}】的资源暂时没有找到带磁链的，请重试或换个标签。`)

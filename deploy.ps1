@@ -19,14 +19,12 @@ $excludeItems = @(
 Write-Host "`n📤 上传文件到服务器..." -ForegroundColor Yellow
 Write-Host "目标: ${USER}@${SERVER}:${PORT}${REMOTE_PATH}" -ForegroundColor Cyan
 
-# 注意: 需要手动输入密码 Qq852446634
+# 注意: 需要手动输入密码
 scp -P $PORT -r `
     "$LOCAL_PATH\src" `
     "$LOCAL_PATH\package.json" `
     "$LOCAL_PATH\package-lock.json" `
     "$LOCAL_PATH\server.js" `
-    "$LOCAL_PATH\router.js" `
-    "$LOCAL_PATH\index.js" `
     "$LOCAL_PATH\README.md" `
     "${USER}@${SERVER}:${REMOTE_PATH}/"
 

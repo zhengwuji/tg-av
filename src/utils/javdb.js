@@ -136,9 +136,8 @@ export async function reqJavdb(id, options = {}) {
         // Check if redirected to login page
         if ($('title').text().includes('登入') || $('title').text().includes('Login')) {
             console.log(`JavDB requires login for ${id}, returning basic info`)
-            // 尝试重新获取Cookie并重试一次? 
-            // 暂时先返回基本信息, 因为getValidCookie应该已经处理了登录
-            return result
+            // Return specific flag so handler can notify user
+            return { ...result, loginRequired: true }
         }
 
         // Parse cover image
