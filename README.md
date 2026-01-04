@@ -6,7 +6,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green?logo=node.js)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-一个功能强大的 Telegram 番号查询机器人，支持 JavBus、Pornhub、XHamster 等多个平台的内容搜索。
+一个功能强大的 Telegram 番号查询机器人,支持 **JavDB(优先)**、JavBus、Pornhub、XHamster 等多个平台的内容搜索。
 
 [功能特性](#功能特性) • [快速开始](#快速开始) • [部署教程](#部署教程) • [使用说明](#使用说明)
 
@@ -33,7 +33,8 @@
 
 ### 🎯 核心功能
 
-- **🔍 番号查询** - 支持 JavBus 平台的番号查询，自动获取封面、磁力链接等信息
+- **🔍 番号查询** - 优先使用 **JavDB** 平台,失败时自动降级到 JavBus,获取封面、磁力链接等信息
+- **📝 多格式支持** - 支持标准格式(`ssni-888`)和纯数字格式(`010126_01`)
 - **🌟 演员搜索** - 根据演员名称搜索相关作品
 - **🎲 随机推荐** - 随机推荐优质番号
 - **📊 查询统计** - 记录和展示历史查询数据
@@ -41,11 +42,13 @@
 
 ### 🚀 技术特点
 
-- ✅ 使用 **Polling 模式**，无需配置 Webhook
+- ✅ **智能数据源** - JavDB 优先,自动降级到 JavBus,确保高可用性
+- ✅ **多格式支持** - 支持 `ssni-888`、`010126_01` 等多种番号格式
+- ✅ 使用 **Polling 模式**,无需配置 Webhook
 - ✅ 支持 **私聊** 和 **群聊** 两种模式
-- ✅ 自动区分私聊和群聊，限制群聊显示数量
-- ✅ 使用 **PM2** 进程管理，稳定可靠
-- ✅ 支持 **开机自启**，服务器重启后自动恢复
+- ✅ 自动区分私聊和群聊,限制群聊显示数量
+- ✅ 使用 **PM2** 进程管理,稳定可靠
+- ✅ 支持 **开机自启**,服务器重启后自动恢复
 
 ---
 
@@ -66,7 +69,8 @@ javbus-bot/
 │   │   └── star.js        # 演员搜索功能
 │   └── utils/
 │       ├── telegram.js    # Telegram API 封装
-│       ├── javbus.js      # JavBus 爬虫
+│       ├── javdb.js       # JavDB 爬虫(优先)
+│       ├── javbus.js      # JavBus 爬虫(备用)
 │       ├── pornhub.js     # Pornhub 爬虫
 │       └── xhamster.js    # XHamster 爬虫
 └── README.md              # 本文档
