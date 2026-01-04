@@ -27,5 +27,5 @@ const getEnv = (key, fallback) => {
 }
 
 export const ALLOWED_GROUPS = []
-export const BOT_TOKEN = getEnv('BOT_TOKEN', '8485512611:AAEOS29W_SpASnKcS8HEfbTdaw2ogF6EPDg')
-export const ROBOT_NAME = getEnv('ROBOT_NAME', '@myav147258bot')
+export const BOT_TOKEN = getEnv('BOT_TOKEN', '')
+export const ROBOT_NAME = getEnv('ROBOT_NAME', '@your_bot_username')
