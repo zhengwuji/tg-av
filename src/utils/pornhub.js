@@ -42,7 +42,8 @@ export async function reqPornhub(id, bool) {
     })
 
     // Modern selector for search results
-    let $items = $('ul#videoSearchResult li.pcVideoListItem')
+    // 尝试多种选择器以提高兼容性
+    let $items = $('ul#videoSearchResult li.pcVideoListItem, #videoCategory .pcVideoListItem, .videoBox')
 
     if ($items.length > 0) {
       let list = []
