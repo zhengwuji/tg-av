@@ -1,6 +1,6 @@
 // Helper to get environment variable with fallback
 // Supports Node.js process.env and Cloudflare Worker globals
-const getEnv = (key, fallback) => {
+export const getEnv = (key, fallback) => {
     // Try Node.js process.env
     if (typeof process !== 'undefined' && process.env && process.env[key]) {
         return process.env[key];
