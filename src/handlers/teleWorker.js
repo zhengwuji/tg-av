@@ -28,6 +28,14 @@ export default async request => {
       text: body.message.text.toLowerCase()
     }
 
+    // Check admin status
+    // Ensure we handle potential string/number mismatches and whitespace
+    const adminIdStr = String(ADMIN_ID || '').trim().replace(/['"]/g, '')
+    const chatIdStr = String(MESSAGE.chat_id)
+    const isAdmin = adminIdStr && (chatIdStr === adminIdStr)
+
+    console.log(`[Auth] ChatID: ${chatIdStr}, AdminID: ${adminIdStr}, IsAdmin: ${isAdmin}`)
+
     const headers = new Headers({
       'content-type': 'application/json;charset=UTF-8'
     })
@@ -35,6 +43,7 @@ export default async request => {
 
     const bot = new Telegram(BOT_TOKEN, MESSAGE)
 
+    const userStatus = isAdmin ? '👑 管理员 (无限制)' : '👤 普通用户 (限制: 私聊10/群聊3)'
     const help_text = `
       欢迎使用寻龙机器人,请输入命令格式: \n
         /start 欢迎语 \n
@@ -45,6 +54,11 @@ export default async request => {
         /xv 麻豆 关键字查询P站 \n
         /xm 4k 关键字查询XHAMSTER站 \n
         /random 随机推荐番号 \n
+        
+      📊 当前状态:
+      ID: ${MESSAGE.chat_id}
+      身份: ${userStatus}
+      
       由 Cloudflare Worker 强力驱动
     `
 
