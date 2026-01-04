@@ -7,7 +7,6 @@ import { reqXHamster } from '../utils/xhamster.js'
 import { reqSukebei } from '../utils/sukebei.js'
 import randomJav, { handleCallback } from './random.js'
 import { searchStar } from './star.js'
-import { handleImageSearch } from './imageSearch.js'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -83,11 +82,7 @@ export default async request => {
       return RETURN_OK
     }
 
-    // Handle Photo Messages (Reverse Image Search)
-    if (MESSAGE.photo) {
-      await handleImageSearch(bot, MESSAGE)
-      return RETURN_OK
-    }
+    // Image search removed as per request
 
     if (MESSAGE.text.startsWith('/start')) {
       bot.sendText(MESSAGE.chat_id, help_text)
