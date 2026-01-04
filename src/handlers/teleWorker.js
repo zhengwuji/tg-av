@@ -1,5 +1,5 @@
 import Telegram from '../utils/telegram.js'
-import { BOT_TOKEN, ROBOT_NAME } from '../config/index.js'
+import { BOT_TOKEN, ROBOT_NAME, ADMIN_ID } from '../config/index.js'
 import { reqJavdb } from '../utils/javdb.js'
 import { reqJavbus } from '../utils/javbus.js'
 import { reqPornhub } from '../utils/pornhub.js'

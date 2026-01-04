@@ -36,6 +36,7 @@
 - **🔍 番号查询** - 优先使用 **JavDB** 平台,失败时自动降级到 JavBus,无磁力时尝试 **Sukebei Nyaa**
 - **📝 多格式支持** - 支持标准格式(`ssni-888`)和纯数字格式(`010126_01`)
 - **🤖 自动登录** - 支持 JavDB 自动登录,突破查看限制
+- **👑 管理员模式** - 配置管理员ID,解除搜索结果数量限制
 - **🌟 演员搜索** - 根据演员名称搜索相关作品
 - **🎲 随机推荐** - 随机推荐优质番号
 - **📊 查询统计** - 记录和展示历史查询数据
@@ -186,6 +187,9 @@ export const ROBOT_NAME = getEnv('ROBOT_NAME', '@你的Bot用户名')
 // JavDB 自动登录配置（可选）
 export const JAVDB_EMAIL = getEnv('JAVDB_EMAIL', '')
 export const JAVDB_PASSWORD = getEnv('JAVDB_PASSWORD', '')
+
+// 管理员配置（可选）
+export const ADMIN_ID = getEnv('ADMIN_ID', '') // 设置你的 Telegram ID
 ```
 
 **如何获取 Bot Token？**
@@ -397,6 +401,9 @@ export const ALLOWED_GROUPS = []
 // 建议在 .env 文件中配置
 export const JAVDB_EMAIL = getEnv('JAVDB_EMAIL', '')
 export const JAVDB_PASSWORD = getEnv('JAVDB_PASSWORD', '')
+
+// 管理员配置（可选，解除搜索数量限制）
+export const ADMIN_ID = getEnv('ADMIN_ID', '')
 ```
 
 ### 🔐 JavDB 自动登录配置

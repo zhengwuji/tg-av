@@ -29,3 +29,4 @@ export const getEnv = (key, fallback) => {
 export const ALLOWED_GROUPS = []
 export const BOT_TOKEN = getEnv('BOT_TOKEN', '')
 export const ROBOT_NAME = getEnv('ROBOT_NAME', '@your_bot_username')
+export const ADMIN_ID = getEnv('ADMIN_ID', '') // 管理员ID,拥有无限制查看权限
