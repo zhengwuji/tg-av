@@ -1,39 +1,40 @@
+// import fetch from 'node-fetch' // Using built-in fetch
+
 class Telegram {
   constructor(token, message) {
     this.token = token
     this.message = message
-    this.telegramUrl = 'https://api.telegram.org/bot' + this.token + '/'
-    this.header = {
+    this.telegramUrl = 'https://api.telegram.org/bot' + this.token
+  }
+
+  async sendMessage(method, payload) {
+    const url = `${this.telegramUrl}/${method}`
+    const opts = {
+      method: 'POST',
       headers: {
-        'content-type': 'application/json;charset=UTF-8',
+        'Content-Type': 'application/json'
       },
+      body: JSON.stringify(payload)
+    }
+    try {
+      await fetch(url, opts)
+    } catch (e) {
+      console.error(`Telegram ${method} failed:`, e)
     }
   }
 
-  sendText (chat_id,text) {
-
+  sendText(chat_id, text) {
     let payload = {
-      "method": "sendMessage",
       "chat_id": chat_id,
       "parse_mode": "HTML",
       "disable_web_page_preview": true,
       "text": text
     };
-
-    const opts = {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    };
-
-    fetch(new Request(this.telegramUrl, opts))
+    return this.sendMessage('sendMessage', payload)
   }
 
-  sendPhoto (chat_id, photo) {
+  sendPhoto(chat_id, photo) {
     let payload = {
-      "method": "sendPhoto",
       "chat_id": chat_id,
       "parse_mode": "HTML",
       "disable_web_page_preview": true,
@@ -44,15 +45,7 @@ class Telegram {
       payload.caption = photo.caption
     }
 
-    const opts = {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    };
-
-    fetch(new Request(this.telegramUrl, opts))
+    return this.sendMessage('sendPhoto', payload)
   }
 
 }

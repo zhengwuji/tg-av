@@ -3,12 +3,19 @@ import { BOT_TOKEN, ROBOT_NAME } from '../config/index.js'
 import { reqJavbus } from '../utils/javbus.js'
 import { reqPornhub } from '../utils/pornhub.js'
 import { reqXHamster } from '../utils/xhamster.js'
+import randomJav from './random.js'
+import { searchStar } from './star.js'
 import moment from 'moment'
 moment.locale('zh-cn')
 
 export default async request => {
   try {
     const body = await request.json()
+
+    // 检查是否有有效的消息文本
+    if (!body.message || !body.message.text) {
+      return new Response('ok', { status: 200 })
+    }
 
     const MESSAGE = {
       chat_id: body.message.chat.id,
@@ -30,10 +37,12 @@ export default async request => {
       欢迎使用寻龙机器人,请输入命令格式: \n
         /start 欢迎语 \n
         /av ssni-888 查询 \n
+        /star 三上悠亜 搜索演员 \n
         /state 5 查询历史 \n
         /show ht/mv/lg/tr/cm 关键字查询P站 \n
         /xv 麻豆 关键字查询P站 \n
         /xm 4k 关键字查询XHAMSTER站 \n
+        /random 随机推荐番号 \n
       由 Cloudflare Worker 强力驱动
     `
 
@@ -53,7 +62,7 @@ export default async request => {
       bot.sendText(MESSAGE.chat_id, buffer)
       return RETURN_OK
     } else if (MESSAGE.text.startsWith('/state')) {
-      let days = MESSAGE.text.replace('/av', '').trim()
+      let days = MESSAGE.text.replace('/state', '').trim()
       let buffer = drawState(days)
       bot.sendText(MESSAGE.chat_id, buffer)
       return RETURN_OK
@@ -203,7 +212,7 @@ export default async request => {
       if (state.date[today]) state.date[today]++
       else state.date[today] = 1
 
-      let code = MESSAGE.text.replace('/xv', '').trim()
+      let code = MESSAGE.text.replace('/xm', '').trim()
 
       let isPrivate = MESSAGE.chat_type === 'private'
       let max = isPrivate ? 10 : 3
@@ -232,6 +241,13 @@ export default async request => {
       } catch (e) {
         bot.sendText(MESSAGE.chat_id, e.message)
       }
+      return RETURN_OK
+    } else if (MESSAGE.text.startsWith('/random')) {
+      await randomJav(MESSAGE)
+      return RETURN_OK
+    } else if (MESSAGE.text.startsWith('/star')) {
+      let starName = MESSAGE.text.replace('/star', '').trim()
+      await searchStar(MESSAGE, starName)
       return RETURN_OK
     } else {
       bot.sendText(MESSAGE.chat_id, help_text)
