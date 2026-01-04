@@ -268,20 +268,25 @@ export default async request => {
         let { list } = await reqPornhub(code, false)
 
         if (list.length) {
-          let message = '关键字查询：[' + code + ']\n'
-          list.every((list, i) => {
-            message +=
-              '\n----------------------\n点击观看: <a href="' +
-              list.link +
-              '">' +
-              list.title +
-              '</a>'
-            message += '\n时长: ' + list.duration
-            message += '\n好评率: ' + list.good
-            message += '\n观看人数: ' + list.views
-            return i + 1 < max
-          })
-          bot.sendText(MESSAGE.chat_id, message)
+          // 限制发送数量 (私聊5条, 群聊3条)
+          const sendMax = isPrivate ? 5 : 3
+
+          for (let i = 0; i < list.length; i++) {
+            if (i >= sendMax) break
+            const item = list[i]
+            const caption = `<b>${item.title}</b>\n\n⏱ 时长: ${item.duration}\n👁 观看: ${item.views}\n👍 好评: ${item.good}\n\n<a href="${item.link}">🎥 点击观看</a>`
+
+            try {
+              await bot.sendPhoto(MESSAGE.chat_id, {
+                url: item.cover,
+                caption: caption,
+                parse_mode: 'HTML'
+              })
+            } catch (err) {
+              console.error('Send photo failed:', err)
+              await bot.sendText(MESSAGE.chat_id, caption)
+            }
+          }
         } else {
           bot.sendText(MESSAGE.chat_id, '还没有相关链接')
         }
@@ -348,18 +353,25 @@ export default async request => {
         let { list } = await reqXHamster(code)
 
         if (list.length) {
-          let message = '推荐资源：[' + code + ']\n'
-          list.every((list, i) => {
-            message +=
-              '\n----------------------\n点击观看: <a href="' +
-              list.link +
-              '">' +
-              list.title +
-              '</a>'
-            message += '\n时长：' + list.duration
-            return i + 1 < max
-          })
-          bot.sendText(MESSAGE.chat_id, message)
+          // 限制发送数量 (私聊5条, 群聊3条)
+          const sendMax = isPrivate ? 5 : 3
+
+          for (let i = 0; i < list.length; i++) {
+            if (i >= sendMax) break
+            const item = list[i]
+            const caption = `<b>${item.title}</b>\n\n⏱ 时长: ${item.duration}\n\n<a href="${item.link}">🎥 点击观看</a>`
+
+            try {
+              await bot.sendPhoto(MESSAGE.chat_id, {
+                url: item.cover,
+                caption: caption,
+                parse_mode: 'HTML'
+              })
+            } catch (err) {
+              console.error('Send photo failed:', err)
+              await bot.sendText(MESSAGE.chat_id, caption)
+            }
+          }
         } else {
           bot.sendText(MESSAGE.chat_id, '还没有相关链接')
         }
