@@ -16,6 +16,7 @@ export default async request => {
 
     // 处理回调查询 (按钮点击)
     if (body.callback_query) {
+      console.log(`[Callback] Received: ${body.callback_query.data} from ${body.callback_query.from.id}`)
       await handleCallback(body.callback_query)
       return new Response('ok', { status: 200 })
     }

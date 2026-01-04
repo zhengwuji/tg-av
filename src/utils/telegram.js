@@ -54,6 +54,13 @@ class Telegram {
     return this.callApi('sendPhoto', payload)
   }
 
+  async answerCallbackQuery(callback_query_id, text = '') {
+    return this.callApi('answerCallbackQuery', {
+      callback_query_id: callback_query_id,
+      text: text
+    })
+  }
+
 }
 
 export default Telegram

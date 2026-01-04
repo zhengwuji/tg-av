@@ -42,8 +42,14 @@ export async function handleCallback(callbackQuery) {
     const bot = new Telegram(BOT_TOKEN, { chat_id: callbackQuery.message.chat.id })
     const chatId = callbackQuery.message.chat.id
     const data = callbackQuery.data
+    const callbackId = callbackQuery.id
+
+    console.log(`[HandleCallback] Data: ${data}, ChatID: ${chatId}`)
 
     try {
+        // 必须响应回调,否则按钮会一直转圈
+        await bot.answerCallbackQuery(callbackId)
+
         // 1. 直接随机
         if (data === 'random_direct') {
             await handleRandomCode(bot, chatId)
