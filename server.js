@@ -29,6 +29,27 @@ bot.on('message', async (msg) => {
     }
 });
 
+// 监听回调查询 (按钮点击)
+bot.on('callback_query', async (query) => {
+    try {
+        // 构造类似 Webhook 的请求对象
+        const webhookBody = {
+            callback_query: query,
+            message: query.message
+        };
+
+        // 创建模拟的 Request 对象
+        const mockRequest = {
+            json: async () => webhookBody
+        };
+
+        // 调用原有的 teleWorker 处理逻辑
+        await teleWorker(mockRequest);
+    } catch (error) {
+        console.error('处理回调时出错:', error);
+    }
+});
+
 // 错误处理
 bot.on('polling_error', (error) => {
     console.error('Polling 错误:', error);
