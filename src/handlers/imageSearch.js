@@ -1,6 +1,8 @@
 import sagiri from 'sagiri'
 import { SAUCENAO_API_KEY } from '../config/index.js'
 import { reqJavdb } from '../utils/javdb.js'
+import { searchXsList } from '../utils/xslist.js'
+import { searchStar } from './star.js'
 
 let client = null
 
@@ -32,7 +34,30 @@ export async function handleImageSearch(bot, message) {
         const bestMatch = results.find(r => r.similarity > 70)
 
         if (!bestMatch) {
-            await bot.sendText(message.chat_id, '❌ 未找到相似度足够高的结果。')
+            await bot.sendText(message.chat_id, '⚠️ SauceNAO 未找到相似度足够高的结果，尝试使用 XsList 搜脸...')
+
+            // Fallback to XsList
+            const xsResult = await searchXsList(fileLink)
+
+            if (xsResult && xsResult.similarity > 70) {
+                await bot.sendText(message.chat_id, `🎯 XsList 识别成功: ${xsResult.name} (相似度: ${xsResult.similarity}%)`)
+
+                // Search for the actress using existing star search logic
+                // We need to construct a mock message or call searchStar directly if exported
+                // searchStar expects (bot, message, starName)
+                // We need to adapt it or just send the name
+
+                // Let's try to call searchStar
+                try {
+                    await searchStar(bot, message, xsResult.name)
+                } catch (e) {
+                    console.error('Star search failed:', e)
+                    await bot.sendText(message.chat_id, `识别到演员: ${xsResult.name}，但搜索作品失败。`)
+                }
+                return
+            }
+
+            await bot.sendText(message.chat_id, '❌ XsList 也未找到相似度足够高的结果。')
             return
         }
 
