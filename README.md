@@ -33,8 +33,9 @@
 
 ### 🎯 核心功能
 
-- **🔍 番号查询** - 优先使用 **JavDB** 平台,失败时自动降级到 JavBus,获取封面、磁力链接等信息
+- **🔍 番号查询** - 优先使用 **JavDB** 平台,失败时自动降级到 JavBus,无磁力时尝试 **Sukebei Nyaa**
 - **📝 多格式支持** - 支持标准格式(`ssni-888`)和纯数字格式(`010126_01`)
+- **🤖 自动登录** - 支持 JavDB 自动登录,突破查看限制
 - **🌟 演员搜索** - 根据演员名称搜索相关作品
 - **🎲 随机推荐** - 随机推荐优质番号
 - **📊 查询统计** - 记录和展示历史查询数据
@@ -42,7 +43,8 @@
 
 ### 🚀 技术特点
 
-- ✅ **智能数据源** - JavDB 优先,自动降级到 JavBus,确保高可用性
+- ✅ **智能数据源** - JavDB -> JavBus -> Sukebei Nyaa 多源自动降级
+- ✅ **自动突破限制** - 内置 Puppeteer 实现 JavDB 自动登录
 - ✅ **多格式支持** - 支持 `ssni-888`、`010126_01` 等多种番号格式
 - ✅ 使用 **Polling 模式**,无需配置 Webhook
 - ✅ 支持 **私聊** 和 **群聊** 两种模式
@@ -180,6 +182,10 @@ nano src/config/index.js
 ```javascript
 export const BOT_TOKEN = getEnv('BOT_TOKEN', '你的Bot Token')
 export const ROBOT_NAME = getEnv('ROBOT_NAME', '@你的Bot用户名')
+
+// JavDB 自动登录配置（可选）
+export const JAVDB_EMAIL = getEnv('JAVDB_EMAIL', '')
+export const JAVDB_PASSWORD = getEnv('JAVDB_PASSWORD', '')
 ```
 
 **如何获取 Bot Token？**
@@ -384,7 +390,13 @@ export const BOT_TOKEN = getEnv('BOT_TOKEN', '默认值')
 export const ROBOT_NAME = getEnv('ROBOT_NAME', '@mybot')
 
 // 允许的群组 ID（可选，留空表示允许所有群组）
+// 允许的群组 ID（可选，留空表示允许所有群组）
 export const ALLOWED_GROUPS = []
+
+// JavDB 账号配置（可选，用于自动登录获取更多磁力链接）
+// 建议在 .env 文件中配置
+export const JAVDB_EMAIL = getEnv('JAVDB_EMAIL', '')
+export const JAVDB_PASSWORD = getEnv('JAVDB_PASSWORD', '')
 ```
 
 ---
@@ -465,6 +477,14 @@ pm2 save
 ---
 
 ## 🔄 更新日志
+
+### v1.1.0 (2026-01-05)
+
+- ✨ **新增 Sukebei Nyaa 搜索源** - 解决部分冷门资源无磁力问题
+- ✨ **新增 JavDB 自动登录** - 自动突破登录限制查看磁力链接
+- ⚡ **优化搜索逻辑** - JavDB -> JavBus -> Sukebei 智能降级
+- 🐛 **修复番号格式** - 完美支持 `010126_01` 等纯数字格式
+- 📝 **更新文档** - 添加新功能说明和配置指南
 
 ### v1.0.0 (2026-01-05)
 
