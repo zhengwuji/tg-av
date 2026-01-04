@@ -399,6 +399,35 @@ export const JAVDB_EMAIL = getEnv('JAVDB_EMAIL', '')
 export const JAVDB_PASSWORD = getEnv('JAVDB_PASSWORD', '')
 ```
 
+### 🔐 JavDB 自动登录配置
+
+部分资源（如 `010126_01`）在 JavDB 上需要登录后才能查看磁力链接。本机器人内置了自动登录功能。
+
+**配置步骤：**
+
+1. 注册 [JavDB](https://javdb.com) 账号（免费）。
+2. 在服务器的 `.env` 文件中添加账号密码：
+
+```bash
+# 编辑 .env 文件
+nano /root/javbus-bot/.env
+
+# 添加以下内容
+JAVDB_EMAIL="你的邮箱"
+JAVDB_PASSWORD="你的密码"
+```
+
+1. 重启 Bot：
+
+```bash
+pm2 restart javbus-bot
+```
+
+**注意：**
+
+- 账号密码仅保存在你自己的服务器上，不会发送给第三方。
+- 自动登录使用无头浏览器模拟，仅在需要时触发。
+
 ---
 
 ## ❓ 常见问题
