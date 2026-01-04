@@ -4,6 +4,7 @@ import { reqJavdb } from '../utils/javdb.js'
 import { reqJavbus } from '../utils/javbus.js'
 import { reqPornhub } from '../utils/pornhub.js'
 import { reqXHamster } from '../utils/xhamster.js'
+import { reqSukebei } from '../utils/sukebei.js'
 import randomJav from './random.js'
 import { searchStar } from './star.js'
 import moment from 'moment'
@@ -126,6 +127,25 @@ export default async request => {
             // 如果之前JavDB有部分结果(如在catch前已赋值),这里可能需要处理
             // 但通常catch意味着JavDB完全失败,所以result可能为空
             if (!result) result = { title: '', cover: '', magnet: [], list: [] }
+          }
+        }
+
+        // 3. If still no magnets, try Sukebei
+        if (result.magnet.length === 0) {
+          try {
+            console.log(`No magnets found yet, trying Sukebei for ${code}...`)
+            const sukebeiResult = await reqSukebei(code)
+
+            if (sukebeiResult.magnet.length > 0) {
+              result.magnet = sukebeiResult.magnet
+              // If we still don't have a title (rare), use Sukebei's
+              if (!result.title) {
+                result.title = sukebeiResult.title
+                source = 'Sukebei'
+              }
+            }
+          } catch (e) {
+            console.log(`Sukebei fallback failed for ${code}:`, e.message)
           }
         }
 
