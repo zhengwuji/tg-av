@@ -95,7 +95,11 @@ export default async request => {
       let max = isPrivate ? 10 : 3
 
       try {
-        if (isPrivate) bot.sendText(MESSAGE.chat_id, `开始查找车牌：${code} ……`)
+        if (isPrivate) {
+          let startMsg = `开始查找车牌：${code} ……`
+          if (isAdmin) startMsg += `\n(👑 管理员模式: 无限制)`
+          bot.sendText(MESSAGE.chat_id, startMsg)
+        }
 
         // 优先使用JavDB,失败时降级到JavBus
         let result = null
