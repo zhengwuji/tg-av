@@ -105,16 +105,28 @@ export default async request => {
           result = await reqJavdb(code)
           source = 'JavDB'
 
-          // 如果JavDB没有找到结果,尝试JavBus
+          // 如果JavDB没有找到结果(或只有基本信息无磁力),尝试JavBus
           if (!result.title || result.magnet.length === 0) {
-            result = await reqJavbus(code)
-            source = 'JavBus'
+            const busResult = await reqJavbus(code)
+            // 只有当JavBus有结果时才覆盖
+            if (busResult.title) {
+              result = busResult
+              source = 'JavBus'
+            }
+            // 否则保留JavDB的结果(可能只有标题和封面)
           }
         } catch (e) {
           // JavDB失败,降级到JavBus
           console.log(`JavDB failed for ${code}, falling back to JavBus:`, e.message)
-          result = await reqJavbus(code)
-          source = 'JavBus'
+          try {
+            result = await reqJavbus(code)
+            source = 'JavBus'
+          } catch (busErr) {
+            console.log(`JavBus also failed:`, busErr.message)
+            // 如果之前JavDB有部分结果(如在catch前已赋值),这里可能需要处理
+            // 但通常catch意味着JavDB完全失败,所以result可能为空
+            if (!result) result = { title: '', cover: '', magnet: [], list: [] }
+          }
         }
 
         let { title, cover, magnet, list } = result

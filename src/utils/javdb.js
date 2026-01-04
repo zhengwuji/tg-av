@@ -83,6 +83,22 @@ export async function reqJavdb(id) {
             const $link = $firstItem.find('a')
             if ($link.length > 0) {
                 firstVideoLink = $link.attr('href')
+
+                // Extract preliminary info from search result
+                // Title is usually in the 'title' attribute of the link or image
+                result.title = $link.attr('title') || $firstItem.find('.video-title').text().trim()
+
+                // Cover image
+                const $img = $firstItem.find('img')
+                let coverSrc = $img.attr('src') || $img.attr('data-src')
+                if (coverSrc) {
+                    if (coverSrc.startsWith('//')) {
+                        coverSrc = 'https:' + coverSrc
+                    } else if (coverSrc.startsWith('/')) {
+                        coverSrc = javdbUrl + coverSrc
+                    }
+                    result.cover = coverSrc
+                }
             }
         }
 
@@ -95,12 +111,16 @@ export async function reqJavdb(id) {
         ajax_req.headers["Referer"] = searchUrl
 
         response = await fetch(detailUrl, ajax_req)
-        if (!response.ok) {
-            throw new Error(`JavDB detail page failed: ${response.status}`)
-        }
+        // Note: 403 or redirect might happen if login required
 
         responseText = await response.text()
         $ = cheerio.load(responseText)
+
+        // Check if redirected to login page
+        if ($('title').text().includes('登入') || $('title').text().includes('Login')) {
+            console.log(`JavDB requires login for ${id}, returning basic info`)
+            return result
+        }
 
         // Parse cover image
         const $cover = $('.video-cover img, .column-video-cover img')
