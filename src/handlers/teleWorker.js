@@ -5,7 +5,7 @@ import { reqJavbus } from '../utils/javbus.js'
 import { reqPornhub } from '../utils/pornhub.js'
 import { reqXHamster } from '../utils/xhamster.js'
 import { reqSukebei } from '../utils/sukebei.js'
-import randomJav from './random.js'
+import randomJav, { handleCallback } from './random.js'
 import { searchStar } from './star.js'
 import moment from 'moment'
 moment.locale('zh-cn')
@@ -13,6 +13,12 @@ moment.locale('zh-cn')
 export default async request => {
   try {
     const body = await request.json()
+
+    // 处理回调查询 (按钮点击)
+    if (body.callback_query) {
+      await handleCallback(body.callback_query)
+      return new Response('ok', { status: 200 })
+    }
 
     // 检查是否有有效的消息文本
     if (!body.message || !body.message.text) {
