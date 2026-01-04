@@ -2,6 +2,7 @@ import sagiri from 'sagiri'
 import { SAUCENAO_API_KEY } from '../config/index.js'
 import { reqJavdb } from '../utils/javdb.js'
 import { searchXsList } from '../utils/xslist.js'
+import { searchGoogleLens } from '../utils/googleLens.js'
 import { searchStar } from './star.js'
 
 let client = null
@@ -57,7 +58,21 @@ export async function handleImageSearch(bot, message) {
                 return
             }
 
-            await bot.sendText(message.chat_id, '❌ XsList 也未找到相似度足够高的结果。')
+            await bot.sendText(message.chat_id, '❌ XsList 也未找到相似度足够高的结果，尝试使用 Google Lens...')
+
+            // Fallback to Google Lens
+            const lensResult = await searchGoogleLens(fileLink)
+
+            if (lensResult && lensResult.url) {
+                const caption = `🔍 Google Lens 搜索结果:\n\n` +
+                    `🔗 <a href="${lensResult.url}">点击查看 Google Lens 结果</a>\n\n` +
+                    `⚠️ 这是一个通用搜索引擎，请点击链接查看是否有匹配结果。`
+
+                await bot.sendText(message.chat_id, caption, { parse_mode: 'HTML' })
+                return
+            }
+
+            await bot.sendText(message.chat_id, '❌ 所有搜索引擎均未找到结果。')
             return
         }
 

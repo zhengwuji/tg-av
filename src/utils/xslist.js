@@ -58,46 +58,6 @@ export async function searchXsList(imageUrl) {
             fs.unlinkSync(tempFilePath)
             return null
         }
-
-        // Parse results
-        const results = await page.evaluate(() => {
-            const items = document.querySelectorAll('div.row > div') // Adjust selector based on actual page structure if needed
-            // Based on screenshot: 
-            // "Akari Mitani - ... - 90.87% similarity"
-            // It seems results are stacked. Let's try to find the first valid result.
-
-            // More generic approach: find elements containing "similarity"
-            const resultElements = Array.from(document.querySelectorAll('body *')).filter(el =>
-                el.innerText && el.innerText.includes('similarity') && el.tagName === 'A' // Usually the name is a link above the similarity text or part of it
-            )
-
-            // Actually, looking at the screenshot:
-            // Link: Akari Mitani - ... - 90.87% similarity
-            // The link text itself contains the info.
-
-            const links = Array.from(document.querySelectorAll('a'))
-            const match = links.find(a => a.innerText.includes('similarity'))
-
-            if (match) {
-                const text = match.innerText
-                // Format: "Name - ... - XX.XX% similarity"
-                const similarityMatch = text.match(/(\d+\.?\d*)%\s*similarity/)
-                const nameMatch = text.split('-')[0].trim()
-
-                return {
-                    name: nameMatch,
-                    similarity: similarityMatch ? parseFloat(similarityMatch[1]) : 0,
-                    link: match.href
-                }
-            }
-            return null
-        })
-
-        // Cleanup temp file
-        fs.unlinkSync(tempFilePath)
-
-        return results
-
     } catch (error) {
         console.error('[XsList] Error:', error)
         return null
