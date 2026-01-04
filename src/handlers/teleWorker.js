@@ -1,5 +1,6 @@
 import Telegram from '../utils/telegram.js'
 import { BOT_TOKEN, ROBOT_NAME } from '../config/index.js'
+import { reqJavdb } from '../utils/javdb.js'
 import { reqJavbus } from '../utils/javbus.js'
 import { reqPornhub } from '../utils/pornhub.js'
 import { reqXHamster } from '../utils/xhamster.js'
@@ -48,7 +49,10 @@ export default async request => {
 
     const state = { start: Date.now(), date: {} }
 
-    const codeRegex = /^([a-z]+)(?:-|_|\s)?([0-9]+)$/
+    // 支持多种番号格式:
+    // 1. 字母+数字: ssni-888, ssni_888, ssni 888
+    // 2. 纯数字+下划线: 010126_01, 123456_99
+    const codeRegex = /^([a-z]+)(?:-|_|\s)?([0-9]+)$|^(\d{6})_(\d{2})$/
 
     if (body.message.sticker) {
       bot.sendText(MESSAGE.chat_id, help_text)
@@ -76,8 +80,14 @@ export default async request => {
 
       let code = MESSAGE.text.replace('/av', '').trim()
       if (codeRegex.test(code)) {
-        code = code.match(codeRegex)
-        code = code[1] + '-' + code[2]
+        const match = code.match(codeRegex)
+        if (match[1] && match[2]) {
+          // 字母+数字格式: ssni888 -> ssni-888
+          code = match[1] + '-' + match[2]
+        } else if (match[3] && match[4]) {
+          // 纯数字格式: 保持原样 010126_01
+          code = match[3] + '_' + match[4]
+        }
       }
 
       let isPrivate = MESSAGE.chat_type === 'private'
@@ -86,7 +96,28 @@ export default async request => {
       try {
         if (isPrivate) bot.sendText(MESSAGE.chat_id, `开始查找车牌：${code} ……`)
 
-        let { title, cover, magnet, list } = await reqJavbus(code)
+        // 优先使用JavDB,失败时降级到JavBus
+        let result = null
+        let source = ''
+
+        try {
+          // 优先尝试JavDB
+          result = await reqJavdb(code)
+          source = 'JavDB'
+
+          // 如果JavDB没有找到结果,尝试JavBus
+          if (!result.title || result.magnet.length === 0) {
+            result = await reqJavbus(code)
+            source = 'JavBus'
+          }
+        } catch (e) {
+          // JavDB失败,降级到JavBus
+          console.log(`JavDB failed for ${code}, falling back to JavBus:`, e.message)
+          result = await reqJavbus(code)
+          source = 'JavBus'
+        }
+
+        let { title, cover, magnet, list } = result
 
         const media = {
           url: cover || '',
