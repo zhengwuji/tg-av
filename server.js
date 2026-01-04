@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import TelegramBot from 'node-telegram-bot-api';
 import { BOT_TOKEN } from './src/config/index.js';
 import teleWorker from './src/handlers/teleWorker.js';
