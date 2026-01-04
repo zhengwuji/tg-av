@@ -122,10 +122,30 @@ async function handleTagSearch(bot, chatId, tag) {
         // const page = Math.floor(Math.random() * 5) + 1
 
         // 调用 reqJavdb, 开启随机模式
-        const result = await reqJavdb(tag, { random: true })
+        // 尝试最多5次以找到带磁链的结果
+        let result = null
+        for (let i = 0; i < 5; i++) {
+            const tempResult = await reqJavdb(tag, { random: true })
+            if (tempResult.title && tempResult.magnet && tempResult.magnet.length > 0) {
+                result = tempResult
+                break
+            }
+            // 如果是最后一次尝试且之前没找到, 就用最后一次的结果(即使没磁链)
+            // 或者我们可以决定严格不返回? 用户说"没有磁链的能不选就不选" -> 最好还是严格点
+            // 但如果真的没有, 还是告诉用户比较好
+            if (i === 4 && !result) {
+                result = tempResult
+            }
+        }
 
-        if (!result.title) {
+        if (!result || !result.title) {
             await bot.sendText(chatId, `未找到关于【${tag}】的资源`)
+            return
+        }
+
+        // 如果最终还是没有磁链, 提示用户
+        if (!result.magnet || result.magnet.length === 0) {
+            await bot.sendText(chatId, `关于【${tag}】的资源暂时没有找到带磁链的，请重试或换个标签。`)
             return
         }
 
@@ -194,31 +214,27 @@ async function handleRandomCode(bot, chatId, preferBigTits = false) {
             // 检查是否有磁力
             const hasMagnet = result.magnet && result.magnet.length > 0
 
+            // 如果没有磁力, 直接跳过 (用户要求严格过滤)
+            if (!hasMagnet) {
+                console.log(`Skipped no magnet content: ${title}`)
+                continue
+            }
+
             // 如果是优先巨乳模式
             if (preferBigTits) {
                 if (BIG_TITS_KEYWORDS.some(k => title.includes(k))) {
-                    // 找到了巨乳!
-                    // 如果有磁力, 直接返回 (完美匹配)
-                    if (hasMagnet) {
-                        bestResult = { ...result, code }
-                        break
-                    }
-                    // 如果没磁力, 暂存为最佳结果(如果之前没有更好的)
-                    if (!bestResult) {
-                        bestResult = { ...result, code }
-                    }
-                }
-            } else {
-                // 普通模式
-                if (hasMagnet) {
-                    // 有磁力, 直接返回
+                    // 找到了巨乳且有磁力!
                     bestResult = { ...result, code }
                     break
                 }
-                // 没磁力, 暂存
+                // 如果没找到巨乳但有磁力, 暂存为保底
                 if (!bestResult) {
                     bestResult = { ...result, code }
                 }
+            } else {
+                // 普通模式且有磁力, 直接返回
+                bestResult = { ...result, code }
+                break
             }
         } catch (e) {
             // ignore error and retry

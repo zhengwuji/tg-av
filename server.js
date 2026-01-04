@@ -9,6 +9,22 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 console.log('🤖 Telegram Bot 启动中...');
 console.log('📡 使用 Polling 模式接收消息');
 
+// 设置命令列表
+bot.setMyCommands([
+    { command: 'start', description: '欢迎语' },
+    { command: 'av', description: '番号查询 (例: /av ssni-888)' },
+    { command: 'random', description: '随机推荐番号' },
+    { command: 'show', description: '热门推荐 (Pornhub)' },
+    { command: 'star', description: '演员搜索 (例: /star 三上悠亜)' },
+    { command: 'xv', description: '视频搜索 (Pornhub)' },
+    { command: 'xm', description: '视频搜索 (XHamster)' },
+    { command: 'state', description: '查询统计' }
+]).then(() => {
+    console.log('✅ 命令列表已更新');
+}).catch((error) => {
+    console.error('❌ 更新命令列表失败:', error);
+});
+
 // 监听所有消息
 bot.on('message', async (msg) => {
     try {
