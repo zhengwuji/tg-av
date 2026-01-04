@@ -1,9 +1,6 @@
 import sagiri from 'sagiri'
 import { SAUCENAO_API_KEY } from '../config/index.js'
 import { reqJavdb } from '../utils/javdb.js'
-import { searchXsList } from '../utils/xslist.js'
-import { searchGoogleLens } from '../utils/googleLens.js'
-import { searchStar } from './star.js'
 
 let client = null
 
@@ -35,44 +32,19 @@ export async function handleImageSearch(bot, message) {
         const bestMatch = results.find(r => r.similarity > 70)
 
         if (!bestMatch) {
-            await bot.sendText(message.chat_id, '⚠️ SauceNAO 未找到相似度足够高的结果，尝试使用 XsList 搜脸...')
+            // 当 SauceNAO 无法识别时，提供多个搜索引擎的链接
+            const caption = `⚠️ SauceNAO 未找到相似度足够高的结果。\n\n` +
+                `📱 请手动尝试以下搜索引擎：\n\n` +
+                `🔍 <a href="https://xslist.org/zh/searchByImage">XsList 搜脸</a> - 专业女优识别\n` +
+                `🔍 <a href="https://lens.google.com">Google Lens</a> - 通用图片搜索\n` +
+                `🔍 <a href="https://yandex.com/images/">Yandex Images</a> - 备用搜索\n\n` +
+                `💡 提示：在上述网站中上传图片进行搜索`
 
-            // Fallback to XsList
-            const xsResult = await searchXsList(fileLink)
-
-            if (xsResult && xsResult.similarity > 70) {
-                await bot.sendText(message.chat_id, `🎯 XsList 识别成功: ${xsResult.name} (相似度: ${xsResult.similarity}%)`)
-
-                // Search for the actress using existing star search logic
-                // We need to construct a mock message or call searchStar directly if exported
-                // searchStar expects (bot, message, starName)
-                // We need to adapt it or just send the name
-
-                // Let's try to call searchStar
-                try {
-                    await searchStar(bot, message, xsResult.name)
-                } catch (e) {
-                    console.error('Star search failed:', e)
-                    await bot.sendText(message.chat_id, `识别到演员: ${xsResult.name}，但搜索作品失败。`)
-                }
-                return
-            }
-
-            await bot.sendText(message.chat_id, '❌ XsList 也未找到相似度足够高的结果，尝试使用 Google Lens...')
-
-            // Fallback to Google Lens
-            const lensResult = await searchGoogleLens(fileLink)
-
-            if (lensResult && lensResult.url) {
-                const caption = `🔍 Google Lens 搜索结果:\n\n` +
-                    `🔗 <a href="${lensResult.url}">点击查看 Google Lens 结果</a>\n\n` +
-                    `⚠️ 这是一个通用搜索引擎，请点击链接查看是否有匹配结果。`
-
-                await bot.sendText(message.chat_id, caption, { parse_mode: 'HTML' })
-                return
-            }
-
-            await bot.sendText(message.chat_id, '❌ 所有搜索引擎均未找到结果。')
+            await bot.sendPhoto(message.chat_id, {
+                url: fileLink,
+                caption: caption,
+                parse_mode: 'HTML'
+            })
             return
         }
 
@@ -150,7 +122,7 @@ export async function handleImageSearch(bot, message) {
                 `作者/角色: ${bestMatch.authorName || 'Unknown'}\n` +
                 `链接: ${bestMatch.url}\n\n` +
                 `⚠️ 未能自动提取番号，请手动尝试搜索。\n\n` +
-                `🕵️‍♀️ <a href="https://xslist.org/zh/searchByImage">在 XsList 上搜脸</a>`
+                `🕵️‍♀️ <a href="https://xslist.org/zh/searchByImage">在 XsList上搜脸</a>`
 
             await bot.sendPhoto(message.chat_id, {
                 url: bestMatch.thumbnail,
