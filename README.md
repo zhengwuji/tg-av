@@ -573,78 +573,27 @@ pm2 save
         API_ID="你的API_ID"
         API_HASH="你的API_HASH"
         SESSION_STRING="你的SESSION_STRING"
-        # 多存储配置 (可选)
-        DOWNLOAD_PATHS='{"Local": "downloads/", "Alist": "/mnt/alist/telegram_downloads"}'
         ```
 
 ### 📖 使用方法
 
-#### 1. **设置存储位置**
+**超级简单 - 只需一步！**
 
-发送 `/wangpan` 命令，查看当前默认存储位置，或点击按钮切换。
+直接将**受限消息的链接**（例如 `https://t.me/c/123456/789`）发送给机器人。
 
-- **Local**: 本地存储，文件保存在服务器的 `downloads/` 目录
-- **GDrive**: Google Drive 或其他挂载的网盘
+**⚡ 工作流程**：
 
-#### 2. **下载受限内容**
-
-只需将**受限消息的链接**（例如 `https://t.me/c/123456/789`）发送给机器人。
-
-**工作流程**：
-
-1. 📥 机器人先下载文件到本地临时目录（确保Telegram能访问）
-2. 📤 自动转发文件到Telegram聊天（无论选择哪种存储）
-3. 📁 如果选择了非Local存储（如GDrive），自动移动文件到目标位置
-
-**优势**：
-
-- ✅ **文件必定能转发**：先下载到本地，确保Telegram能访问文件
-- ✅ **支持所有存储**：无论是Local、GDrive还是远程挂载路径
-- ✅ **一次下载，双重备份**：既能在Telegram查看，又保存在指定存储
-
-> **注意**：您的 Telegram 账号必须在该受限频道/群组中，否则无法下载。
-
-### 💾 多存储支持 (Alist / S3 / WebDAV / GDrive)
-
-您可以将文件直接下载到挂载的网盘目录中。
-
-#### 1. 挂载网盘 (以 Alist 为例)
-
-推荐使用 `rclone` 挂载 WebDAV：
-
-```bash
-# 安装 rclone
-sudo -v ; curl https://rclone.org/install.sh | sudo bash
-
-# 配置 rclone
-rclone config
-# (按照提示添加 Alist WebDAV)
-
-# 挂载到本地目录
-mkdir -p /mnt/alist
-rclone mount alist: /mnt/alist --daemon
+```
+📥 下载到本地 → 📤 转发到Telegram → 🗑️ 自动删除
 ```
 
-#### 2. 配置 DOWNLOAD_PATHS
+1. 机器人使用Userbot下载文件到服务器本地
+2. 自动转发文件到您的Telegram聊天
+3. 转发成功后立即删除本地文件（节省空间）
 
-在 `.env` 文件中配置 `DOWNLOAD_PATHS` 环境变量（JSON 格式）：
+**✨ 优势**：
 
-```env
-DOWNLOAD_PATHS='{"Local": "downloads/", "Alist": "/mnt/alist/telegram_downloads", "S3": "/mnt/s3/tg"}'
-```
-
-- **Key**: 显示在按钮上的名称（如 "Local", "Alist"）。
-- **Value**: 服务器上的绝对路径或相对路径。
-
-配置完成后，重启机器人即可生效。
-
-- **Telegram**: [@myav147258bot](https://t.me/myav147258bot)
-
----
-
-<div align="center">
-
-**⭐ 如果这个项目对你有帮助，请给个 Star！**
+- ✅ **超级简单**：一步完成，无需任何配置
 
 Made with ❤️ by [zhengwuji](https://github.com/zhengwuji)
 
