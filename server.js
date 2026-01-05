@@ -18,7 +18,6 @@ bot.setMyCommands([
     { command: 'star', description: '演员搜索 (例: /star 三上悠亜)' },
     { command: 'xv', description: '视频搜索 (Pornhub)' },
     { command: 'xm', description: '视频搜索 (XHamster)' },
-    { command: 'wangpan', description: '设置默认存储' },
     { command: 'state', description: '查询统计' }
 ]).then(() => {
     console.log('✅ 命令列表已更新');
