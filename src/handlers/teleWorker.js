@@ -163,6 +163,25 @@ export default async request => {
             let buffer = drawState(days)
             bot.sendText(MESSAGE.chat_id, buffer)
             return RETURN_OK
+        } else if (MESSAGE.text === '/wangpan') {
+            // 存储位置选择命令
+            const currentPath = DOWNLOAD_PATHS[currentStorageKey] || 'downloads/'
+            const storageButtons = Object.keys(DOWNLOAD_PATHS).map(key => ({
+                text: `💾 ${key}`,
+                callback_data: `set_storage_${key}`
+            }))
+
+            await bot.sendText(
+                MESSAGE.chat_id,
+                `📁 当前默认存储位置: **${currentStorageKey}**\n🗂️ 路径: \`${currentPath}\`\n\n点击下方按钮切换默认位置:`,
+                {
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [storageButtons]
+                    }
+                }
+            )
+            return RETURN_OK
         } else if (MESSAGE.text === '/av') {
             bot.sendText(MESSAGE.chat_id, help_text)
             return RETURN_OK
