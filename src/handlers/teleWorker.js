@@ -93,19 +93,17 @@ export default async request => {
 
             try {
                 const filePath = await downloadRestrictedMessage(link, savePath)
-                await bot.sendText(MESSAGE.chat_id, `✅ 获取成功！\n📂 路径: ${filePath}`)
+                await bot.sendText(MESSAGE.chat_id, `✅ 获取成功！\n📂 存储位置: ${storageName}\n📁 路径: ${filePath}`)
 
-                // Only send back file if it's Local storage
-                if (storageName === 'Local') {
-                    await bot.sendText(MESSAGE.chat_id, '📤 正在发送文件给您...')
-                    const ext = filePath.split('.').pop().toLowerCase()
-                    if (['jpg', 'jpeg', 'png'].includes(ext)) {
-                        await bot.sendPhoto(MESSAGE.chat_id, { file_path: filePath })
-                    } else if (['mp4', 'mov'].includes(ext)) {
-                        await bot.sendVideo(MESSAGE.chat_id, { file_path: filePath })
-                    } else {
-                        await bot.sendDocument(MESSAGE.chat_id, { file_path: filePath })
-                    }
+                // 无论存储在哪里，都自动转发文件给机器人
+                await bot.sendText(MESSAGE.chat_id, '📤 正在发送文件给您...')
+                const ext = filePath.split('.').pop().toLowerCase()
+                if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                    await bot.sendPhoto(MESSAGE.chat_id, { file_path: filePath })
+                } else if (['mp4', 'mov'].includes(ext)) {
+                    await bot.sendVideo(MESSAGE.chat_id, { file_path: filePath })
+                } else {
+                    await bot.sendDocument(MESSAGE.chat_id, { file_path: filePath })
                 }
             } catch (error) {
                 console.error('[RestrictedContent] Error:', error)
