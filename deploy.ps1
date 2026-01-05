@@ -22,6 +22,7 @@ Write-Host "目标: ${USER}@${SERVER}:${PORT}${REMOTE_PATH}" -ForegroundColor Cy
 # 注意: 需要手动输入密码
 scp -P $PORT -r `
     "$LOCAL_PATH\src" `
+    "$LOCAL_PATH\scripts" `
     "$LOCAL_PATH\package.json" `
     "$LOCAL_PATH\package-lock.json" `
     "$LOCAL_PATH\server.js" `
