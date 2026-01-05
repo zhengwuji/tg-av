@@ -556,8 +556,60 @@ pm2 save
     - 在 `.env` 文件或环境变量中添加：
 
         ```env
+        API_ID="你的API_ID"
+        API_HASH="你的API_HASH"
+        SESSION_STRING="你的SESSION_STRING"
+        # 多存储配置 (可选)
+        DOWNLOAD_PATHS='{"Local": "downloads/", "Alist": "/mnt/alist/telegram_downloads"}'
+        ```
 
-- **GitHub Issues**: [提交问题](https://github.com/zhengwuji/tg-av/issues)
+### 📖 使用方法
+
+1. **设置存储位置**：
+    发送 `/wangpan` 命令，查看当前默认存储位置，或点击按钮切换。
+
+2. **下载受限内容**：
+    只需将**受限消息的链接**（例如 `https://t.me/c/123456/789`）发送给机器人。
+    - 机器人会自动下载到您设置的**默认存储位置**。
+    - 如果是 **Local**，下载完成后会回传给您。
+    - 如果是 **网盘挂载目录**，下载完成后文件即在网盘中。
+
+> **注意**：您的 Telegram 账号必须在该受限频道/群组中，否则无法下载。
+
+### 💾 多存储支持 (Alist / S3 / WebDAV / GDrive)
+
+您可以将文件直接下载到挂载的网盘目录中。
+
+#### 1. 挂载网盘 (以 Alist 为例)
+
+推荐使用 `rclone` 挂载 WebDAV：
+
+```bash
+# 安装 rclone
+sudo -v ; curl https://rclone.org/install.sh | sudo bash
+
+# 配置 rclone
+rclone config
+# (按照提示添加 Alist WebDAV)
+
+# 挂载到本地目录
+mkdir -p /mnt/alist
+rclone mount alist: /mnt/alist --daemon
+```
+
+#### 2. 配置 DOWNLOAD_PATHS
+
+在 `.env` 文件中配置 `DOWNLOAD_PATHS` 环境变量（JSON 格式）：
+
+```env
+DOWNLOAD_PATHS='{"Local": "downloads/", "Alist": "/mnt/alist/telegram_downloads", "S3": "/mnt/s3/tg"}'
+```
+
+- **Key**: 显示在按钮上的名称（如 "Local", "Alist"）。
+- **Value**: 服务器上的绝对路径或相对路径。
+
+配置完成后，重启机器人即可生效。
+
 - **Telegram**: [@myav147258bot](https://t.me/myav147258bot)
 
 ---
