@@ -28,15 +28,6 @@ export default async request => {
 
             if (data.startsWith('media_')) {
                 await handleMediaCallback(body.callback_query, bot)
-            } else if (data.startsWith('set_storage_')) {
-                // 处理设置默认存储路径
-                const pathKey = data.replace('set_storage_', '')
-                if (DOWNLOAD_PATHS[pathKey]) {
-                    currentStorageKey = pathKey
-                    await bot.sendMessage(body.callback_query.message.chat.id, `✅ 默认存储路径已切换为: **${pathKey}**\n📂 路径: \`${DOWNLOAD_PATHS[pathKey]}\``, { parse_mode: 'Markdown' })
-                } else {
-                    await bot.sendMessage(body.callback_query.message.chat.id, '❌ 无效的存储路径')
-                }
             } else {
                 await handleCallback(body.callback_query)
             }
@@ -166,25 +157,6 @@ export default async request => {
             let days = MESSAGE.text.replace('/state', '').trim()
             let buffer = drawState(days)
             bot.sendText(MESSAGE.chat_id, buffer)
-            return RETURN_OK
-        } else if (MESSAGE.text === '/wangpan') {
-            // 存储位置选择命令
-            const currentPath = DOWNLOAD_PATHS[currentStorageKey] || 'downloads/'
-            const storageButtons = Object.keys(DOWNLOAD_PATHS).map(key => ({
-                text: `💾 ${key}`,
-                callback_data: `set_storage_${key}`
-            }))
-
-            await bot.sendText(
-                MESSAGE.chat_id,
-                `📁 当前默认存储位置: **${currentStorageKey}**\n🗂️ 路径: \`${currentPath}\`\n\n点击下方按钮切换默认位置:`,
-                {
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [storageButtons]
-                    }
-                }
-            )
             return RETURN_OK
         } else if (MESSAGE.text === '/av') {
             bot.sendText(MESSAGE.chat_id, help_text)
@@ -412,24 +384,6 @@ export default async request => {
         } else if (MESSAGE.text.startsWith('/star')) {
             let starName = MESSAGE.text.replace('/star', '').trim()
             await searchStar(MESSAGE, starName)
-            return RETURN_OK
-        } else if (MESSAGE.text.startsWith('/wangpan')) {
-            const pathKeys = Object.keys(DOWNLOAD_PATHS)
-            const buttons = pathKeys.map(key => {
-                return { text: `💾 ${key}`, callback_data: `set_storage_${key}` }
-            })
-            // Split into rows of 2
-            const keyboard = []
-            for (let i = 0; i < buttons.length; i += 2) {
-                keyboard.push(buttons.slice(i, i + 2))
-            }
-
-            await bot.sendMessage(MESSAGE.chat_id, `💾 当前默认存储位置: **${currentStorageKey}**\n📂 路径: \`${DOWNLOAD_PATHS[currentStorageKey]}\`\n\n点击下方按钮切换默认位置:`, {
-                reply_markup: {
-                    inline_keyboard: keyboard
-                },
-                parse_mode: 'Markdown'
-            })
             return RETURN_OK
         } else {
             bot.sendText(MESSAGE.chat_id, help_text)
