@@ -37,9 +37,10 @@ export async function initUserbot() {
 /**
  * Download media from a restricted message link
  * @param {string} link - The message link (e.g., https://t.me/c/123456/789)
+ * @param {string} savePath - The directory to save the file to (default: 'downloads/')
  * @returns {Promise<string>} - The path to the downloaded file
  */
-export async function downloadRestrictedMessage(link) {
+export async function downloadRestrictedMessage(link, savePath = 'downloads/') {
     if (!client) {
         await initUserbot()
         if (!client) throw new Error('Userbot not configured or failed to connect.')
@@ -84,7 +85,7 @@ export async function downloadRestrictedMessage(link) {
             throw new Error('Message does not contain media.')
         }
 
-        console.log('[Userbot] Downloading media...')
+        console.log(`[Userbot] Downloading media to ${savePath}...`)
 
         // Determine filename
         let filename = 'restricted_download'
@@ -110,7 +111,8 @@ export async function downloadRestrictedMessage(link) {
             }
         }
 
-        const downloadDir = path.join(process.cwd(), 'downloads')
+        // Ensure savePath is absolute or relative to cwd correctly
+        const downloadDir = path.isAbsolute(savePath) ? savePath : path.join(process.cwd(), savePath)
         await mkdir(downloadDir, { recursive: true })
 
         const filePath = path.join(downloadDir, filename + ext)

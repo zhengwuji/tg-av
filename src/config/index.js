@@ -37,3 +37,14 @@ export const DOWNLOAD_PATH = getEnv('DOWNLOAD_PATH', '/tmp/bot_downloads') // ä¸
 export const API_ID = getEnv('API_ID', '')
 export const API_HASH = getEnv('API_HASH', '')
 export const SESSION_STRING = getEnv('SESSION_STRING', '')
+
+let downloadPaths = { "Local": "downloads/" }
+try {
+    const pathsStr = getEnv('DOWNLOAD_PATHS', '')
+    if (pathsStr) {
+        downloadPaths = JSON.parse(pathsStr)
+    }
+} catch (e) {
+    console.error('Failed to parse DOWNLOAD_PATHS:', e)
+}
+export const DOWNLOAD_PATHS = downloadPaths

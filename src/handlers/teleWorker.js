@@ -1,5 +1,5 @@
 import Telegram from '../utils/telegram.js'
-import { BOT_TOKEN, ROBOT_NAME, ADMIN_ID, SESSION_STRING } from '../config/index.js'
+import { BOT_TOKEN, ROBOT_NAME, ADMIN_ID, SESSION_STRING, DOWNLOAD_PATHS } from '../config/index.js'
 import { reqJavdb } from '../utils/javdb.js'
 import { reqJavbus } from '../utils/javbus.js'
 import { reqPornhub } from '../utils/pornhub.js'
@@ -23,9 +23,61 @@ export default async request => {
             console.log(`[Callback] Received: ${body.callback_query.data} from ${body.callback_query.from.id}`)
 
             const data = body.callback_query.data
+            const bot = new Telegram(BOT_TOKEN, { chat_id: body.callback_query.message.chat.id })
+
             if (data.startsWith('media_')) {
-                const bot = new Telegram(BOT_TOKEN, { chat_id: body.callback_query.message.chat.id })
                 await handleMediaCallback(body.callback_query, bot)
+            } else if (data.startsWith('save_')) {
+                // 处理保存路径选择
+                // data format: save_<PathKey>
+                // We need to get the link from the replied message
+                const pathKey = data.replace('save_', '')
+                const savePath = DOWNLOAD_PATHS[pathKey]
+                const linkMsg = body.callback_query.message.reply_to_message
+
+                if (!savePath || !linkMsg || !linkMsg.text) {
+                    await bot.sendMessage(body.callback_query.message.chat.id, '❌ 无法获取链接或配置错误')
+                    return new Response('ok', { status: 200 })
+                }
+
+                // Extract link again
+                const tgLinkRegex = /https:\/\/t\.me\/(c\/\d+|[\w\d_]+)\/\d+/
+                const linkMatch = linkMsg.text.match(tgLinkRegex)
+                if (!linkMatch) {
+                    await bot.sendMessage(body.callback_query.message.chat.id, '❌ 原始消息中未找到链接')
+                    return new Response('ok', { status: 200 })
+                }
+                const link = linkMatch[0]
+
+                await bot.sendMessage(body.callback_query.message.chat.id, `📥 正在下载到 **${pathKey}** ...\n📂 路径: \`${savePath}\``, { parse_mode: 'Markdown' })
+
+                try {
+                    const filePath = await downloadRestrictedMessage(link, savePath)
+                    await bot.sendMessage(body.callback_query.message.chat.id, `✅ 下载完成！\n📄 文件: \`${filePath}\``, { parse_mode: 'Markdown' })
+
+                    // Only send back file if it's in local downloads (optional, or always send back?)
+                    // User might want to just save to drive.
+                    // Let's send back if it's "Local" or if user requests. 
+                    // For now, let's keep behavior simple: always try to send back if size permits?
+                    // Or maybe just notify success if it's remote storage.
+
+                    if (pathKey === 'Local') {
+                        await bot.sendMessage(body.callback_query.message.chat.id, '📤 正在回传文件...')
+                        const ext = filePath.split('.').pop().toLowerCase()
+                        if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                            await bot.sendPhoto(body.callback_query.message.chat.id, { file_path: filePath })
+                        } else if (['mp4', 'mov'].includes(ext)) {
+                            await bot.sendVideo(body.callback_query.message.chat.id, { file_path: filePath })
+                        } else {
+                            await bot.sendDocument(body.callback_query.message.chat.id, { file_path: filePath })
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('[RestrictedContent] Error:', error)
+                    await bot.sendMessage(body.callback_query.message.chat.id, `❌ 下载失败: ${error.message}`)
+                }
+
             } else {
                 await handleCallback(body.callback_query)
             }
@@ -74,24 +126,51 @@ export default async request => {
             console.log('[RestrictedContent] Detected Telegram link, processing...')
             const link = body.message.text.match(tgLinkRegex)[0]
 
-            await bot.sendText(MESSAGE.chat_id, `🔍 检测到 Telegram 链接，正在尝试通过 Userbot 获取受限内容...\n🔗 链接: ${link}`)
+            // Check configured paths
+            const pathKeys = Object.keys(DOWNLOAD_PATHS)
+
+            if (pathKeys.length > 1) {
+                // Multiple paths, ask user
+                const buttons = pathKeys.map(key => {
+                    return { text: `💾 ${key}`, callback_data: `save_${key}` }
+                })
+                // Split into rows of 2
+                const keyboard = []
+                for (let i = 0; i < buttons.length; i += 2) {
+                    keyboard.push(buttons.slice(i, i + 2))
+                }
+
+                await bot.sendMessage(MESSAGE.chat_id, `🔍 检测到链接: ${link}\n请选择保存位置:`, {
+                    reply_to_message_id: MESSAGE.message_id,
+                    reply_markup: {
+                        inline_keyboard: keyboard
+                    }
+                })
+                return RETURN_OK
+            }
+
+            // Single path (default behavior)
+            const savePath = DOWNLOAD_PATHS[pathKeys[0]]
+            await bot.sendText(MESSAGE.chat_id, `🔍 正在下载到 **${pathKeys[0]}** ...\n🔗 链接: ${link}`, { parse_mode: 'Markdown' })
 
             try {
-                const filePath = await downloadRestrictedMessage(link)
-                await bot.sendText(MESSAGE.chat_id, `✅ 获取成功！文件已保存到服务器。\n📂 路径: ${filePath}`)
-                await bot.sendText(MESSAGE.chat_id, '📤 正在发送文件给您...')
+                const filePath = await downloadRestrictedMessage(link, savePath)
+                await bot.sendText(MESSAGE.chat_id, `✅ 获取成功！\n📂 路径: ${filePath}`)
 
-                const ext = filePath.split('.').pop().toLowerCase()
-                if (['jpg', 'jpeg', 'png'].includes(ext)) {
-                    await bot.sendPhoto(MESSAGE.chat_id, { file_path: filePath })
-                } else if (['mp4', 'mov'].includes(ext)) {
-                    await bot.sendVideo(MESSAGE.chat_id, { file_path: filePath })
-                } else {
-                    await bot.sendDocument(MESSAGE.chat_id, { file_path: filePath })
+                if (pathKeys[0] === 'Local') {
+                    await bot.sendText(MESSAGE.chat_id, '📤 正在发送文件给您...')
+                    const ext = filePath.split('.').pop().toLowerCase()
+                    if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                        await bot.sendPhoto(MESSAGE.chat_id, { file_path: filePath })
+                    } else if (['mp4', 'mov'].includes(ext)) {
+                        await bot.sendVideo(MESSAGE.chat_id, { file_path: filePath })
+                    } else {
+                        await bot.sendDocument(MESSAGE.chat_id, { file_path: filePath })
+                    }
                 }
             } catch (error) {
                 console.error('[RestrictedContent] Error:', error)
-                await bot.sendText(MESSAGE.chat_id, `❌ 获取失败: ${error.message}\n\n请检查: \n1. Userbot 是否配置正确 (API_ID, API_HASH, SESSION_STRING)\n2. 您的账号是否在该频道/群组中\n3. 链接是否有效`)
+                await bot.sendText(MESSAGE.chat_id, `❌ 获取失败: ${error.message}\n\n请检查: \n1. Userbot 是否配置正确\n2. 您的账号是否在该频道/群组中\n3. 链接是否有效`)
             }
             return RETURN_OK
         }
