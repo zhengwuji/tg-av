@@ -85,25 +85,46 @@ export default async request => {
             console.log('[RestrictedContent] Detected Telegram link, processing...')
             const link = body.message.text.match(tgLinkRegex)[0]
 
-            // Use current default storage path
-            const savePath = DOWNLOAD_PATHS[currentStorageKey] || DOWNLOAD_PATHS['Local'] || 'downloads/'
+            // Determine target storage
+            const targetPath = DOWNLOAD_PATHS[currentStorageKey] || DOWNLOAD_PATHS['Local'] || 'downloads/'
             const storageName = currentStorageKey || 'Local'
+            const isLocalStorage = storageName === 'Local'
 
             await bot.sendText(MESSAGE.chat_id, `🔍 正在下载到 **${storageName}** ...\n🔗 链接: ${link}`, { parse_mode: 'Markdown' })
 
             try {
-                const filePath = await downloadRestrictedMessage(link, savePath)
-                await bot.sendText(MESSAGE.chat_id, `✅ 获取成功！\n📂 存储位置: ${storageName}\n📁 路径: ${filePath}`)
+                // 策略：先下载到本地临时目录（确保Telegram能访问），转发后再移动到目标存储
+                const tempPath = 'downloads/'
+                const filePath = await downloadRestrictedMessage(link, tempPath)
+                const filename = filePath.split('/').pop().split('\\').pop()
 
-                // 无论存储在哪里，都自动转发文件给机器人
+                await bot.sendText(MESSAGE.chat_id, `✅ 下载成功！\n📂 目标存储: ${storageName}`)
+
+                // 转发文件到Telegram（从本地临时目录）
                 await bot.sendText(MESSAGE.chat_id, '📤 正在发送文件给您...')
-                const ext = filePath.split('.').pop().toLowerCase()
+                const ext = filename.split('.').pop().toLowerCase()
                 if (['jpg', 'jpeg', 'png'].includes(ext)) {
                     await bot.sendPhoto(MESSAGE.chat_id, { file_path: filePath })
                 } else if (['mp4', 'mov'].includes(ext)) {
                     await bot.sendVideo(MESSAGE.chat_id, { file_path: filePath })
                 } else {
                     await bot.sendDocument(MESSAGE.chat_id, { file_path: filePath })
+                }
+
+                // 如果目标不是Local，移动文件到目标存储
+                if (!isLocalStorage) {
+                    const fs = await import('fs/promises')
+                    const path = await import('path')
+                    const targetDir = path.isAbsolute(targetPath) ? targetPath : path.join(process.cwd(), targetPath)
+                    const targetFilePath = path.join(targetDir, filename)
+
+                    await fs.mkdir(targetDir, { recursive: true })
+                    await fs.rename(filePath, targetFilePath)
+
+                    console.log(`[RestrictedContent] Moved file from ${filePath} to ${targetFilePath}`)
+                    await bot.sendText(MESSAGE.chat_id, `📁 文件已移动到: ${targetFilePath}`)
+                } else {
+                    await bot.sendText(MESSAGE.chat_id, `📁 文件路径: ${filePath}`)
                 }
             } catch (error) {
                 console.error('[RestrictedContent] Error:', error)
