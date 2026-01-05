@@ -140,22 +140,6 @@ ssh -p <端口> <用户名>@<服务器IP>
 ssh -p 22 root@192.168.1.100
 ```
 
-#### 步骤 2: 安装 Node.js
-
-```bash
-# 添加 NodeSource 仓库（Node.js 20.x）
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-
-# 安装 Node.js
-apt install nodejs -y
-
-# 验证安装
-node --version  # 应显示 v20.x.x
-npm --version   # 应显示 10.x.x
-```
-
-#### 步骤 3: 下载项目代码
-
 ```bash
 # 创建项目目录
 mkdir -p /root/javbus-bot
@@ -558,6 +542,49 @@ pm2 save
 - [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) - Telegram Bot API 封装
 - [cheerio](https://github.com/cheeriojs/cheerio) - HTML 解析库
 - [PM2](https://pm2.keymetrics.io/) - Node.js 进程管理器
+
+---
+
+## 🚀 新增功能：受限内容保存 (SaveAny-Bot 集成)
+
+机器人现在支持保存来自**禁止转发/保存**频道的内容。
+
+### ⚙️ 配置要求
+
+要使用此功能，您需要配置 Telegram Userbot（用户机器人）凭据。
+
+1. **获取 API ID 和 Hash**：
+    - 访问 [my.telegram.org](https://my.telegram.org) 并登录。
+    - 点击 "API development tools"。
+    - 创建一个新应用，获取 `App api_id` 和 `App api_hash`。
+
+2. **生成 Session String**：
+    - 在项目根目录运行脚本：
+
+        ```bash
+        node scripts/generate_session.js
+        ```
+
+    - 按照提示输入手机号、验证码和密码（如果有）。
+    - 脚本将输出一段长字符串，这就是您的 `SESSION_STRING`。
+
+3. **更新配置**：
+    - 在 `.env` 文件或环境变量中添加：
+
+        ```env
+        API_ID=您的api_id
+        API_HASH=您的api_hash
+        SESSION_STRING=生成的session_string
+        ```
+
+### 📖 使用方法
+
+只需将**受限消息的链接**（例如 `https://t.me/c/123456/789`）发送给机器人。
+- 机器人会自动检测链接。
+- 通过 Userbot 下载受限内容。
+- 将下载的文件发送给您。
+
+> **注意**：您的 Telegram 账号必须在该受限频道/群组中，否则无法下载。
 
 ---
 

@@ -23,8 +23,7 @@ export async function processForwardedMedia(message, bot) {
         // 获取媒体类型和file_id
         let mediaType = null
         let fileId = null
-        let caption = message.caption || ''
-
+        
         if (message.photo && message.photo.length > 0) {
             mediaType = 'photo'
             fileId = message.photo[message.photo.length - 1].file_id // 获取最大尺寸
@@ -41,22 +40,21 @@ export async function processForwardedMedia(message, bot) {
             return
         }
 
-        // 通知用户开始处理
-        await bot.sendText(message.chat_id, `📥 开始处理${getMediaTypeName(mediaType)}...`)
-
-        // 使用copyMessage直接转发到频道（更高效，不需要下载）
-        try {
-            await bot.copyMessage(TARGET_CHANNEL_ID, message.chat.id, message.message_id)
-            await bot.sendText(message.chat_id, `✅ ${getMediaTypeName(mediaType)}已成功转发到频道！`)
-
-            console.log(`[MediaHandler] Successfully forwarded ${mediaType} to channel ${TARGET_CHANNEL_ID}`)
-        } catch (copyError) {
-            console.error('[MediaHandler] copyMessage failed, trying alternative method:', copyError)
-
-            // 如果copyMessage失败，尝试通过file_id直接发送
-            await sendMediaByFileId(bot, TARGET_CHANNEL_ID, mediaType, fileId, caption)
-            await bot.sendText(message.chat_id, `✅ ${getMediaTypeName(mediaType)}已成功发送到频道！`)
+        // 构造交互按钮
+        const keyboard = {
+            inline_keyboard: [
+                [
+                    { text: '📥 下载到服务器', callback_data: `media_dl:${mediaType}:${fileId}` },
+                    { text: '📢 转发到频道', callback_data: `media_fwd:${mediaType}:${message.message_id}` }
+                ]
+            ]
         }
+
+        // 回复用户，询问操作
+        await bot.sendMessage(message.chat_id, `🤖 已收到${getMediaTypeName(mediaType)}，请选择操作：`, {
+            reply_to_message_id: message.message_id,
+            reply_markup: JSON.stringify(keyboard)
+        })
 
     } catch (error) {
         console.error('[MediaHandler] Error processing media:', error)
@@ -65,23 +63,57 @@ export async function processForwardedMedia(message, bot) {
 }
 
 /**
- * 通过file_id直接发送媒体到频道
+ * 处理媒体相关的回调查询
+ * @param {Object} callbackQuery - 回调查询对象
+ * @param {Object} bot - Telegram Bot实例
  */
-async function sendMediaByFileId(bot, channelId, mediaType, fileId, caption) {
-    const options = caption ? { caption } : {}
+export async function handleMediaCallback(callbackQuery, bot) {
+    const data = callbackQuery.data
+    const message = callbackQuery.message
+    const chatId = message.chat.id
+    
+    // 格式: action:type:id
+    // media_dl:photo:file_id_xxx
+    // media_fwd:photo:message_id_123
+    const parts = data.split(':')
+    const action = parts[0]
+    const mediaType = parts[1]
+    const id = parts.slice(2).join(':') // file_id might contain colons? usually not, but safe to join
 
-    switch (mediaType) {
-        case 'photo':
-            await bot.sendPhoto(channelId, { file_id: fileId }, options)
-            break
-        case 'video':
-            await bot.sendVideo(channelId, { file_id: fileId }, options)
-            break
-        case 'document':
-            await bot.sendDocument(channelId, { file_id: fileId }, options)
-            break
-        default:
-            throw new Error(`Unsupported media type: ${mediaType}`)
+    try {
+        if (action === 'media_fwd') {
+            // 转发到频道
+            const messageId = parseInt(id)
+            
+            // 这里的 messageId 是用户发给机器人的那条原始消息的ID
+            // 但 callbackQuery.message 是机器人发的那个带按钮的消息
+            // 我们需要转发的是原始消息。
+            // 之前的 processForwardedMedia 中，我们把原始消息ID放在了 callback_data 里
+            
+            // 注意：bot.copyMessage 需要 from_chat_id，这里是当前聊天
+            await bot.copyMessage(TARGET_CHANNEL_ID, chatId, messageId)
+            
+            await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ 已转发' })
+            await bot.editMessageText(chatId, message.message_id, `✅ ${getMediaTypeName(mediaType)}已成功转发到频道！`)
+            
+        } else if (action === 'media_dl') {
+            // 下载到服务器
+            const fileId = id
+            await bot.answerCallbackQuery(callbackQuery.id, { text: '📥 开始下载...' })
+            await bot.editMessageText(chatId, message.message_id, `⏳ 正在下载${getMediaTypeName(mediaType)}到服务器...`)
+            
+            const timestamp = new Date().getTime()
+            const ext = getExtension(mediaType)
+            const filename = `${mediaType}_${timestamp}${ext}`
+            const downloadPath = path.join(process.cwd(), 'downloads', filename)
+            
+            await downloadMedia(bot, fileId, downloadPath)
+            
+            await bot.sendText(chatId, `✅ 下载完成！\n📂 保存路径: ${downloadPath}`)
+        }
+    } catch (error) {
+        console.error('[MediaHandler] Callback error:', error)
+        await bot.sendText(chatId, `❌ 操作失败: ${error.message}`)
     }
 }
 
@@ -98,7 +130,19 @@ function getMediaTypeName(mediaType) {
 }
 
 /**
- * 下载媒体到本地（备用方案）
+ * 获取简单的扩展名猜测
+ */
+function getExtension(mediaType) {
+    switch (mediaType) {
+        case 'photo': return '.jpg'
+        case 'video': return '.mp4'
+        case 'document': return '.dat' // 文档类型较杂，暂用dat，实际应从file_path分析
+        default: return ''
+    }
+}
+
+/**
+ * 下载媒体到本地
  * @param {Object} bot - Telegram Bot实例
  * @param {string} fileId - 文件ID
  * @param {string} downloadPath - 下载路径
@@ -115,6 +159,14 @@ export async function downloadMedia(bot, fileId, downloadPath) {
             throw new Error('Failed to get file info')
         }
 
+        // 如果是文档，尝试从 file_path 获取正确扩展名
+        if (downloadPath.endsWith('.dat')) {
+             const realExt = path.extname(fileInfo.file_path)
+             if (realExt) {
+                 downloadPath = downloadPath.replace('.dat', realExt)
+             }
+        }
+
         // 下载文件
         const buffer = await bot.downloadFileBuffer(fileInfo.file_path)
         if (!buffer) {
@@ -129,20 +181,5 @@ export async function downloadMedia(bot, fileId, downloadPath) {
     } catch (error) {
         console.error('[MediaHandler] Download error:', error)
         throw error
-    }
-}
-
-/**
- * 清理本地文件
- * @param {string} filePath - 文件路径
- */
-export async function cleanupFile(filePath) {
-    try {
-        if (fs.existsSync(filePath)) {
-            await unlink(filePath)
-            console.log(`[MediaHandler] Cleaned up file: ${filePath}`)
-        }
-    } catch (error) {
-        console.error('[MediaHandler] Cleanup error:', error)
     }
 }

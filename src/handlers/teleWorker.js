@@ -7,7 +7,8 @@ import { reqXHamster } from '../utils/xhamster.js'
 import { reqSukebei } from '../utils/sukebei.js'
 import randomJav, { handleCallback } from './random.js'
 import { searchStar } from './star.js'
-import { processForwardedMedia } from '../utils/mediaHandler.js'
+import { processForwardedMedia, handleMediaCallback } from '../utils/mediaHandler.js'
+import { downloadRestrictedMessage } from '../utils/userbot.js'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -18,7 +19,15 @@ export default async request => {
         // 处理回调查询 (按钮点击)
         if (body.callback_query) {
             console.log(`[Callback] Received: ${body.callback_query.data} from ${body.callback_query.from.id}`)
-            await handleCallback(body.callback_query)
+
+            const data = body.callback_query.data
+            if (data.startsWith('media_')) {
+                const bot = new Telegram(BOT_TOKEN, { chat_id: body.callback_query.message.chat.id })
+                await handleMediaCallback(body.callback_query, bot)
+            } else {
+                await handleCallback(body.callback_query)
+            }
+
             return new Response('ok', { status: 200 })
         }
 
@@ -55,6 +64,44 @@ export default async request => {
         if (isAdmin && (body.message.photo || body.message.video || body.message.document)) {
             console.log('[MediaForward] Admin forwarded media, processing...')
             await processForwardedMedia(body.message, bot)
+            return RETURN_OK
+        }
+
+        // 处理受限内容链接 (仅管理员)
+        // 匹配 https://t.me/c/xxx/xxx 或 https://t.me/username/xxx
+        const tgLinkRegex = /https:\/\/t\.me\/(c\/\d+|[\w\d_]+)\/\d+/
+        if (isAdmin && body.message.text && tgLinkRegex.test(body.message.text)) {
+            console.log('[RestrictedContent] Detected Telegram link, processing...')
+            const link = body.message.text.match(tgLinkRegex)[0]
+
+            await bot.sendText(MESSAGE.chat_id, `🔍 检测到 Telegram 链接，正在尝试通过 Userbot 获取受限内容...\n🔗 链接: ${link}`)
+
+            try {
+                const filePath = await downloadRestrictedMessage(link)
+
+                // 构造交互按钮 (下载/转发)
+                // 这里我们已经下载到本地了，所以逻辑稍微不同
+                // 我们可以直接发送文件给用户，或者询问是否转发到频道
+
+                await bot.sendText(MESSAGE.chat_id, `✅ 获取成功！文件已保存到服务器。\n📂 路径: ${filePath}`)
+
+                // 发送文件给用户
+                await bot.sendText(MESSAGE.chat_id, '📤 正在发送文件给您...')
+
+                // 根据扩展名发送
+                const ext = filePath.split('.').pop().toLowerCase()
+                if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                    await bot.sendPhoto(MESSAGE.chat_id, { file_path: filePath })
+                } else if (['mp4', 'mov'].includes(ext)) {
+                    await bot.sendVideo(MESSAGE.chat_id, { file_path: filePath })
+                } else {
+                    await bot.sendDocument(MESSAGE.chat_id, { file_path: filePath })
+                }
+
+            } catch (error) {
+                console.error('[RestrictedContent] Error:', error)
+                await bot.sendText(MESSAGE.chat_id, `❌ 获取失败: ${error.message}\n\n请检查: \n1. Userbot 是否配置正确 (API_ID, API_HASH, SESSION_STRING)\n2. 您的账号是否在该频道/群组中\n3. 链接是否有效`)
+            }
             return RETURN_OK
         }
 
