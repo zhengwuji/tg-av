@@ -30,3 +30,5 @@ export const ALLOWED_GROUPS = []
 export const BOT_TOKEN = getEnv('BOT_TOKEN', '')
 export const ROBOT_NAME = getEnv('ROBOT_NAME', '@your_bot_username')
 export const ADMIN_ID = getEnv('ADMIN_ID', '') // 管理员ID,拥有无限制查看权限
+export const TARGET_CHANNEL_ID = getEnv('TARGET_CHANNEL_ID', '') // 媒体转载目标频道ID
+export const DOWNLOAD_PATH = getEnv('DOWNLOAD_PATH', '/tmp/bot_downloads') // 临时下载路径

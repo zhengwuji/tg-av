@@ -7,6 +7,7 @@ import { reqXHamster } from '../utils/xhamster.js'
 import { reqSukebei } from '../utils/sukebei.js'
 import randomJav, { handleCallback } from './random.js'
 import { searchStar } from './star.js'
+import { processForwardedMedia } from '../utils/mediaHandler.js'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -21,8 +22,8 @@ export default async request => {
             return new Response('ok', { status: 200 })
         }
 
-        // 检查是否有有效的消息文本
-        if (!body.message || !body.message.text) {
+        // 检查是否有消息
+        if (!body.message) {
             return new Response('ok', { status: 200 })
         }
 
@@ -32,7 +33,7 @@ export default async request => {
             message_id: body.message.message_id,
             first_name: body.message.chat.first_name,
             last_name: body.message.chat.last_name,
-            text: body.message.text.toLowerCase()
+            text: body.message.text ? body.message.text.toLowerCase() : ''
         }
 
         // Check admin status
@@ -49,6 +50,18 @@ export default async request => {
         const RETURN_OK = new Response('working', { status: 200, headers: headers })
 
         const bot = new Telegram(BOT_TOKEN, MESSAGE)
+
+        // 处理媒体转载功能（仅管理员）
+        if (isAdmin && (body.message.photo || body.message.video || body.message.document)) {
+            console.log('[MediaForward] Admin forwarded media, processing...')
+            await processForwardedMedia(body.message, bot)
+            return RETURN_OK
+        }
+
+        // 如果不是文本消息且不是媒体转载，直接返回
+        if (!body.message.text) {
+            return RETURN_OK
+        }
 
         const userStatus = isAdmin ? '👑 管理员 (无限制)' : '👤 普通用户 (限制: 私聊10/群聊3)'
         const help_text = `
