@@ -61,22 +61,6 @@
 javbus-bot/
 ├── server.js              # 主入口文件（Polling 模式）
 ├── index.js               # Cloudflare Worker 入口（已弃用）
-├── router.js              # 路由处理
-├── package.json           # 项目依赖
-├── src/
-│   ├── config/
-│   │   └── index.js       # 配置文件（Bot Token 等）
-│   ├── handlers/
-│   │   ├── teleWorker.js  # 主要消息处理逻辑
-│   │   ├── random.js      # 随机推荐功能
-│   │   └── star.js        # 演员搜索功能
-│   └── utils/
-│       ├── telegram.js    # Telegram API 封装
-│       ├── javdb.js       # JavDB 爬虫(优先)
-│       ├── javbus.js      # JavBus 爬虫(备用)
-│       ├── pornhub.js     # Pornhub 爬虫
-│       └── xhamster.js    # XHamster 爬虫
-└── README.md              # 本文档
 ```
 
 **技术栈：**
